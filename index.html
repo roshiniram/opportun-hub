@@ -278,56 +278,20 @@
      swap in the Google Sheets CSV version — see README.md.
      date format: "YYYY-MM-DD"
   ============================================================ */
-  const OPPORTUNITIES = [
-    {
-      title: "Summer Software Engineering Internship",
-      org: "Google STEP Program",
-      type: "internship",
-      deadline: "2026-07-15",
-      link: "https://buildyourfuture.withgoogle.com/programs/step",
-      eligibility: "1st/2nd year CS/IT students"
-    },
-    {
-      title: "Generative AI Fundamentals",
-      org: "Google Cloud Skills Boost",
-      type: "certificate",
-      deadline: "2026-12-31",
-      link: "https://www.cloudskillsboost.google/",
-      eligibility: "Any branch, any year"
-    },
-    {
-      title: "Smart India Hackathon 2026",
-      org: "Government of India",
-      type: "hackathon",
-      deadline: "2026-08-01",
-      link: "https://sih.gov.in/",
-      eligibility: "Any engineering branch, team of 6"
-    },
-    {
-      title: "AICTE Pragati Scholarship for Girls",
-      org: "AICTE",
-      type: "scholarship",
-      deadline: "2026-09-30",
-      link: "https://www.aicte-india.org/schemes/students-development-schemes/Pragati",
-      eligibility: "Girl students, diploma/degree, family income < 8L"
-    },
-    {
-      title: "Python for Everybody Specialization",
-      org: "Coursera (audit free)",
-      type: "certificate",
-      deadline: "2026-12-31",
-      link: "https://www.coursera.org/specializations/python",
-      eligibility: "Any year, beginner friendly"
-    },
-    {
-      title: "HackerEarth Campus Hackathon",
-      org: "HackerEarth",
-      type: "hackathon",
-      deadline: "2026-07-05",
-      link: "https://www.hackerearth.com/challenges/",
-      eligibility: "Any branch, individual or team"
-    }
-  ];
+  const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTPX_PFHtIBqqJlV2FHpUSj8wcSZ6oMLDnQfdE6dQmRpZuf4nzA8tw0VgpLxheQqql2yBvXVArpC9RT/pub?output=csv";
+let OPPORTUNITIES = [];
+
+fetch(SHEET_CSV_URL)
+  .then(res => res.text())
+  .then(csv => {
+    const rows = csv.trim().split("\n").slice(1);
+    OPPORTUNITIES = rows.map(row => {
+      const [title, org, type, deadline, link, eligibility] = row.split(",");
+      return { title, org, type: type.trim().toLowerCase(), deadline: deadline.trim(), link, eligibility };
+    });
+    stampToday();
+    render();
+  });
 
   /* ============================================================
      RENDER LOGIC — you should not need to touch below this line
