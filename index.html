@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Student Opportunity Board</title>
+<style>
+  /* ============ TOKENS ============ */
+  :root{
+    --paper:#F1EFE7;
+    --card:#FFFFFF;
+    --ink:#14213D;
+    --ink-soft:#4A5066;
+    --mustard:#E3B23C;
+    --urgent:#B3382C;
+    --line:#D9D4C5;
+    --mono: "Courier New", Courier, monospace;
+    --serif: Georgia, "Times New Roman", serif;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--sans);
+    min-height:100vh;
+  }
+  /* subtle paper texture via repeating gradient */
+  body{
+    background-image:
+      linear-gradient(var(--paper), var(--paper)),
+      repeating-linear-gradient(0deg, rgba(20,33,61,0.025) 0px, rgba(20,33,61,0.025) 1px, transparent 1px, transparent 28px);
+  }
+
+  /* ============ HEADER ============ */
+  header.board-head{
+    border-bottom:3px solid var(--ink);
+    padding:28px 20px 18px;
+    max-width:1000px;
+    margin:0 auto;
+  }
+  .stamp-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:flex-end;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  h1.board-title{
+    font-family:var(--serif);
+    font-weight:700;
+    font-size:clamp(28px,5vw,44px);
+    letter-spacing:0.5px;
+    margin:0;
+    line-height:1.05;
+  }
+  h1.board-title span{
+    display:block;
+    font-size:0.32em;
+    font-family:var(--mono);
+    letter-spacing:3px;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin-bottom:6px;
+  }
+  .today-stamp{
+    font-family:var(--mono);
+    font-size:12px;
+    letter-spacing:1px;
+    color:var(--ink);
+    border:2px solid var(--ink);
+    border-radius:3px;
+    padding:6px 10px;
+    transform:rotate(-3deg);
+    white-space:nowrap;
+    text-transform:uppercase;
+  }
+  .board-sub{
+    margin-top:10px;
+    font-size:14.5px;
+    color:var(--ink-soft);
+    max-width:560px;
+  }
+
+  /* ============ FILTERS ============ */
+  .filter-bar{
+    max-width:1000px;
+    margin:18px auto 0;
+    padding:0 20px;
+    display:flex;
+    gap:8px;
+    flex-wrap:wrap;
+  }
+  .chip{
+    font-family:var(--mono);
+    font-size:12.5px;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    padding:7px 14px;
+    border:1.5px solid var(--ink);
+    border-radius:999px;
+    background:transparent;
+    color:var(--ink);
+    cursor:pointer;
+    transition:background .15s ease, color .15s ease;
+  }
+  .chip:hover{ background:rgba(20,33,61,0.08); }
+  .chip.active{ background:var(--ink); color:var(--paper); }
+  .search-box{
+    margin-left:auto;
+    font-family:var(--sans);
+    font-size:14px;
+    padding:7px 12px;
+    border:1.5px solid var(--ink);
+    border-radius:999px;
+    background:var(--card);
+    color:var(--ink);
+    min-width:160px;
+  }
+  .search-box:focus{ outline:2px solid var(--mustard); outline-offset:1px; }
+
+  /* ============ BOARD ============ */
+  main.board{
+    max-width:1000px;
+    margin:24px auto 60px;
+    padding:0 20px;
+    display:grid;
+    gap:18px;
+  }
+  .empty-state{
+    font-family:var(--mono);
+    text-align:center;
+    color:var(--ink-soft);
+    padding:60px 20px;
+    border:2px dashed var(--line);
+    border-radius:6px;
+  }
+
+  /* the notice card with a torn-ticket stub */
+  .notice{
+    background:var(--card);
+    border:1.5px solid var(--ink);
+    border-radius:4px;
+    display:grid;
+    grid-template-columns: 1fr 96px;
+    box-shadow:3px 3px 0 rgba(20,33,61,0.08);
+    transform:rotate(var(--tilt,0deg));
+  }
+  .notice-body{
+    padding:18px 20px;
+  }
+  .notice-type{
+    display:inline-block;
+    font-family:var(--mono);
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    padding:3px 9px;
+    border-radius:3px;
+    margin-bottom:9px;
+    color:var(--paper);
+    background:var(--ink);
+  }
+  .notice-type.internship{ background:#2E5266; }
+  .notice-type.certificate{ background:#3E6B4F; }
+  .notice-type.hackathon{ background:#7A4B8A; }
+  .notice-type.scholarship{ background:#8A5A2E; }
+
+  .notice-title{
+    font-family:var(--serif);
+    font-size:19px;
+    font-weight:700;
+    margin:0 0 4px;
+    line-height:1.25;
+  }
+  .notice-org{
+    font-size:13.5px;
+    color:var(--ink-soft);
+    margin:0 0 10px;
+  }
+  .notice-meta{
+    font-family:var(--mono);
+    font-size:12px;
+    color:var(--ink-soft);
+    margin:0 0 12px;
+  }
+  .notice-link{
+    display:inline-block;
+    font-family:var(--mono);
+    font-size:12.5px;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    color:var(--ink);
+    text-decoration:none;
+    border-bottom:2px solid var(--mustard);
+    padding-bottom:1px;
+  }
+  .notice-link:hover{ color:var(--urgent); }
+
+  /* stub: perforated, shows days left */
+  .stub{
+    border-left:2px dashed var(--ink);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    padding:10px 6px;
+    position:relative;
+  }
+  .stub .num{
+    font-family:var(--mono);
+    font-size:28px;
+    font-weight:700;
+    line-height:1;
+  }
+  .stub .lbl{
+    font-family:var(--mono);
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    color:var(--ink-soft);
+    margin-top:4px;
+  }
+  .stub.urgent .num{ color:var(--urgent); }
+  .stub.urgent .lbl{ color:var(--urgent); }
+  .stub.expired .num, .stub.expired .lbl{ color:#999; }
+
+  @media (max-width:520px){
+    .notice{ grid-template-columns: 1fr 78px; }
+    .stub .num{ font-size:22px; }
+  }
+
+  footer.board-foot{
+    max-width:1000px;
+    margin:0 auto 40px;
+    padding:0 20px;
+    font-family:var(--mono);
+    font-size:11.5px;
+    color:var(--ink-soft);
+    text-align:center;
+  }
+
+  :focus-visible{ outline:2px solid var(--mustard); outline-offset:2px; }
+  @media (prefers-reduced-motion: reduce){ *{ transition:none !important; } }
+</style>
+</head>
+<body>
+
+<header class="board-head">
+  <div class="stamp-row">
+    <h1 class="board-title"><span>Free &amp; verified, updated daily</span>Student Opportunity Board</h1>
+    <div class="today-stamp" id="todayStamp">LOADING...</div>
+  </div>
+  <p class="board-sub">Every free internship, certificate, hackathon and scholarship worth your time — in one place, with the last date clearly stamped so you never miss a deadline.</p>
+</header>
+
+<div class="filter-bar">
+  <button class="chip active" data-filter="all">All</button>
+  <button class="chip" data-filter="internship">Internships</button>
+  <button class="chip" data-filter="certificate">Certificates</button>
+  <button class="chip" data-filter="hackathon">Hackathons</button>
+  <button class="chip" data-filter="scholarship">Scholarships</button>
+  <input class="search-box" id="searchBox" type="text" placeholder="Search...">
+</div>
+
+<main class="board" id="board"></main>
+
+<footer class="board-foot">
+  Data refreshes from OPPORTUNITIES below. Replace it with a live Google Sheet — see README.md.
+</footer>
+
+<script>
+  /* ============================================================
+     DATA SOURCE
+     Replace this array with your daily-updated entries, OR
+     swap in the Google Sheets CSV version — see README.md.
+     date format: "YYYY-MM-DD"
+  ============================================================ */
+  const OPPORTUNITIES = [
+    {
+      title: "Summer Software Engineering Internship",
+      org: "Google STEP Program",
+      type: "internship",
+      deadline: "2026-07-15",
+      link: "https://buildyourfuture.withgoogle.com/programs/step",
+      eligibility: "1st/2nd year CS/IT students"
+    },
+    {
+      title: "Generative AI Fundamentals",
+      org: "Google Cloud Skills Boost",
+      type: "certificate",
+      deadline: "2026-12-31",
+      link: "https://www.cloudskillsboost.google/",
+      eligibility: "Any branch, any year"
+    },
+    {
+      title: "Smart India Hackathon 2026",
+      org: "Government of India",
+      type: "hackathon",
+      deadline: "2026-08-01",
+      link: "https://sih.gov.in/",
+      eligibility: "Any engineering branch, team of 6"
+    },
+    {
+      title: "AICTE Pragati Scholarship for Girls",
+      org: "AICTE",
+      type: "scholarship",
+      deadline: "2026-09-30",
+      link: "https://www.aicte-india.org/schemes/students-development-schemes/Pragati",
+      eligibility: "Girl students, diploma/degree, family income < 8L"
+    },
+    {
+      title: "Python for Everybody Specialization",
+      org: "Coursera (audit free)",
+      type: "certificate",
+      deadline: "2026-12-31",
+      link: "https://www.coursera.org/specializations/python",
+      eligibility: "Any year, beginner friendly"
+    },
+    {
+      title: "HackerEarth Campus Hackathon",
+      org: "HackerEarth",
+      type: "hackathon",
+      deadline: "2026-07-05",
+      link: "https://www.hackerearth.com/challenges/",
+      eligibility: "Any branch, individual or team"
+    }
+  ];
+
+  /* ============================================================
+     RENDER LOGIC — you should not need to touch below this line
+  ============================================================ */
+  const board = document.getElementById('board');
+  const searchBox = document.getElementById('searchBox');
+  let activeFilter = 'all';
+
+  function daysLeft(dateStr){
+    const today = new Date();
+    today.setHours(0,0,0,0);
+    const target = new Date(dateStr);
+    target.setHours(0,0,0,0);
+    return Math.round((target - today) / 86400000);
+  }
+
+  function stampToday(){
+    const d = new Date();
+    const opts = { day:'2-digit', month:'short', year:'numeric' };
+    document.getElementById('todayStamp').textContent = 'TODAY · ' + d.toLocaleDateString('en-IN', opts).toUpperCase();
+  }
+
+  function render(){
+    const term = searchBox.value.trim().toLowerCase();
+    const filtered = OPPORTUNITIES.filter(o => {
+      const matchesType = activeFilter === 'all' || o.type === activeFilter;
+      const matchesTerm = !term || (o.title + o.org).toLowerCase().includes(term);
+      return matchesType && matchesTerm;
+    }).sort((a,b) => daysLeft(a.deadline) - daysLeft(b.deadline));
+
+    board.innerHTML = '';
+
+    if (filtered.length === 0){
+      board.innerHTML = '<div class="empty-state">No notices match. Try a different filter or search term.</div>';
+      return;
+    }
+
+    filtered.forEach((o, i) => {
+      const left = daysLeft(o.deadline);
+      const expired = left < 0;
+      const urgent = !expired && left <= 5;
+      const tilt = (i % 2 === 0) ? '-0.4deg' : '0.4deg';
+
+      const card = document.createElement('article');
+      card.className = 'notice';
+      card.style.setProperty('--tilt', tilt);
+
+      card.innerHTML = `
+        <div class="notice-body">
+          <span class="notice-type ${o.type}">${o.type}</span>
+          <h2 class="notice-title">${escapeHtml(o.title)}</h2>
+          <p class="notice-org">${escapeHtml(o.org)} · ${escapeHtml(o.eligibility)}</p>
+          <p class="notice-meta">LAST DATE: ${formatDate(o.deadline)}</p>
+          <a class="notice-link" href="${o.link}" target="_blank" rel="noopener">Apply / View details →</a>
+        </div>
+        <div class="stub ${expired ? 'expired' : (urgent ? 'urgent' : '')}">
+          <div class="num">${expired ? '—' : Math.abs(left)}</div>
+          <div class="lbl">${expired ? 'closed' : 'days left'}</div>
+        </div>
+      `;
+      board.appendChild(card);
+    });
+  }
+
+  function formatDate(dateStr){
+    const d = new Date(dateStr);
+    return d.toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }).toUpperCase();
+  }
+
+  function escapeHtml(str){
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+  }
+
+  document.querySelectorAll('.chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+      chip.classList.add('active');
+      activeFilter = chip.dataset.filter;
+      render();
+    });
+  });
+
+  searchBox.addEventListener('input', render);
+
+  stampToday();
+  render();
+</script>
+</body>
+</html>
